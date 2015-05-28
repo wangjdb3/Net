@@ -128,9 +128,18 @@ namespace Net
             Url_Get(f,ref pic_web_url, str_html);
             if (pic_web_url.Count != 0)
             {
+                f.Invoke((EventHandler)(delegate
+                {
+                    f.progressBar1.Maximum = pic_web_url.Count - 1;
+                }));
                 for (int i = 0; i < pic_web_url.Count; i++)
                 {                    
                     Pic_Url_Get(pic_web_url[i], cookies, strCookies, ref pic_url);////////////////////////
+                    f.Invoke((EventHandler)(delegate
+                    {
+                        f.progressBar1.Value = i;
+                        f.label5.Text = "进度：" + (i + 1).ToString() + "/" + pic_web_url.Count;
+                    }));
                 }
                 mp4_url_Get(f, ref pic_web_url, str_html, ref pic_url);
                 if (pic_url.Count == pic_web_url.Count)

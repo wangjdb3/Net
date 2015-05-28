@@ -23,6 +23,7 @@ namespace Net
             button2.Enabled = false;
             button3.Enabled = false;
             button4.Enabled = false;
+            checkBox1.Enabled = false;
         }
         CookieContainer cookies = null;
         string strCookies = string.Empty;
@@ -45,6 +46,7 @@ namespace Net
         private void button3_Click(object sender, EventArgs e)
         {
             deal.th();
+            checkBox1.Checked = true;
         }
 
         private void button4_Click(object sender, EventArgs e)
@@ -52,9 +54,12 @@ namespace Net
             deal.pic_url.Clear();
             deal.pic_web_url.Clear();
             label4.Text = "抓取：";
+            label5.Text = "进度：";
             url_text.Text = "";
             button3.Enabled = false;
             button4.Enabled = false;
+            checkBox1.Checked = false;
+            progressBar1.Value = 0;
         }
     }
 }
