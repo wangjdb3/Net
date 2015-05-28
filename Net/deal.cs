@@ -148,6 +148,11 @@ namespace Net
                     f.button3.Enabled = true;
                     f.button4.Enabled = true;
                 }
+                else
+                {
+                    MessageBox.Show("数据不匹配");
+                    return false;
+                }
             }
             else
             {
