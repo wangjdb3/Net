@@ -133,8 +133,16 @@ namespace Net
                     f.progressBar1.Maximum = pic_web_url.Count - 1;
                 }));
                 for (int i = 0; i < pic_web_url.Count; i++)
-                {                    
-                    Pic_Url_Get(pic_web_url[i], cookies, strCookies, ref pic_url);////////////////////////
+                {
+                    bool b = Pic_Url_Get(pic_web_url[i], cookies, strCookies, ref pic_url);////////////////////////
+                    if (b == false)
+                    {
+                        f.progressBar1.Value = 0;
+                        f.label5.Text = "进度：";
+                        pic_url.Clear();
+                        pic_web_url.Clear();
+                        return false;
+                    }
                     f.Invoke((EventHandler)(delegate
                     {
                         f.progressBar1.Value = i;
