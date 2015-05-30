@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Controls;
 using System.Net;
-using SendHttp;
 using System.IO;
 using System.Text.RegularExpressions;
 using ThunderAgentLib;
@@ -24,7 +23,7 @@ namespace Net
 
         public static string bstrPath = "";
         public static string strCookie = "";
-        public static bool Web_Login(Form1 f, ref CookieContainer cookies, ref string strCookies)
+        public static bool Web_Login(Form1 f, ref CookieCollection cookies, ref string strCookies)
         {
             string filedir = Application.StartupPath;
             string username = string.Empty;
@@ -41,37 +40,24 @@ namespace Net
                 MessageBox.Show("未找到配置文件");
                 return false;
             }
-            SRHttpWebRequest srHttpWebRequest = new SRHttpWebRequest();
-            srHttpWebRequest.Create("https://www.latexperiment.com/access/protect/new-rewrite?f=2&url=/subscribers/&host=www.latexperiment.com&ssl=off");
-            srHttpWebRequest.WebRequest.Timeout = 10000;
+            HttpWebResponse response;
+            CookieCollection Cookies = new CookieCollection();
+            Encoding encoding = Encoding.UTF8;
+            string loginUrl = "https://www.latexperiment.com/access/protect/new-rewrite?f=2&url=/subscribers/&host=www.latexperiment.com&ssl=off";
+            string html_str = "";
+            IDictionary<string, string> parameters = new Dictionary<string, string>();
+            parameters.Add("amember_login", username);
+            parameters.Add("amember_pass", passwd);
+            string cookieString = "";
             try
             {
-                string a = srHttpWebRequest.RunGetRequest();
-            }
-            catch (WebException ex)
-            {
-                f.label1.Text = "登陆状态:" + "访问超时";
-                return false;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("访问发生错误");
-                return false;
-                //发生其他异常时的处理操作。
-            }
-
-            cookies = srHttpWebRequest.WebRequest.CookieContainer;
-            strCookies = cookies.GetCookieHeader(srHttpWebRequest.WebRequest.RequestUri);
-            srHttpWebRequest = new SRHttpWebRequest();
-            srHttpWebRequest.Create("https://www.latexperiment.com/access/protect/new-rewrite?f=2&url=/subscribers/&host=www.latexperiment.com&ssl=off");
-            srHttpWebRequest.Cookie = cookies;
-            srHttpWebRequest.WebRequest.Timeout = 10000;
-            srHttpWebRequest.AddParameter("amember_login", username);
-            srHttpWebRequest.AddParameter("amember_pass", passwd);
-            string str_html = string.Empty;
-            try
-            {
-                str_html = srHttpWebRequest.WritePostAndGetResponse();
+                response = HttpWebResponseUtility.CreatePostHttpResponse(loginUrl, parameters, 10000, null, encoding, Cookies);
+                html_str = HttpWebResponseUtility.StrGetRequest(response, encoding);
+                Cookies = response.Cookies;
+                foreach (Cookie cookie in Cookies)
+                {
+                    cookieString += (cookie.ToString() + "; ");
+                }
             }
             catch (WebException ex)
             {
@@ -85,7 +71,7 @@ namespace Net
                 //发生其他异常时的处理操作。
             }
             Regex reg = new Regex("Welcome to the subscriber area");
-            Match match = reg.Match(str_html);
+            Match match = reg.Match(html_str);
             if (match.Success)
             {
                 f.label1.Text = "登陆状态:" + "登陆成功";
@@ -96,23 +82,22 @@ namespace Net
                 f.label1.Text = "登陆状态:" + "登陆失败";
                 return false;
             }
-            cookies = srHttpWebRequest.WebRequest.CookieContainer;
-            strCookies = cookies.GetCookieHeader(srHttpWebRequest.WebRequest.RequestUri);
+            cookies = Cookies;
+            strCookies = cookieString;
             return true;
         }
         ////////////////////////////////////////////////
-        public static bool Web_Get(Form1 f, CookieContainer cookies, string strCookies)
+        public static bool Web_Get(Form1 f, CookieCollection Cookies, string strCookies)
         {
             string str_html = string.Empty;
+            HttpWebResponse response;
+            Encoding encoding = Encoding.UTF8;
             bstrPath = f.dir_Text.Text.Trim();
-            strCookie = strCookies;
-            SRHttpWebRequest srHttpWebRequest = new SRHttpWebRequest();
-            srHttpWebRequest.Create(f.url_text.Text);
-            srHttpWebRequest.WebRequest.CookieContainer = cookies;
-            srHttpWebRequest.WebRequest.Timeout = 10000;
+            string Url = f.url_text.Text.Trim();
             try
             {
-                str_html = srHttpWebRequest.RunGetRequest();
+                response = HttpWebResponseUtility.CreateGetHttpResponse(Url, 10000, null, Cookies);
+                str_html = HttpWebResponseUtility.StrGetRequest(response, encoding);
             }
             catch (WebException ex)
             {
@@ -134,7 +119,7 @@ namespace Net
                 }));
                 for (int i = 0; i < pic_web_url.Count; i++)
                 {
-                    bool b = Pic_Url_Get(pic_web_url[i], cookies, strCookies, ref pic_url);////////////////////////
+                    bool b = Pic_Url_Get(pic_web_url[i], Cookies, strCookies, ref pic_url);////////////////////////
                     if (b == false)
                     {
                         f.progressBar1.Value = 0;
@@ -185,31 +170,30 @@ namespace Net
             return true;
         }
         ///////////////////////////////////////////////////        
-        public static bool Pic_Url_Get(string pic_web_url, CookieContainer cookies, string strCookies, ref List<string> pic_url)
+        public static bool Pic_Url_Get(string pic_web_url, CookieCollection Cookies, string strCookies, ref List<string> pic_url)
         {
             string str_html = string.Empty;
             int error_num = 0;
-            SRHttpWebRequest srHttpWebRequest = new SRHttpWebRequest();
-label:      srHttpWebRequest.Create(pic_web_url);
-            srHttpWebRequest.WebRequest.CookieContainer = cookies;
-            srHttpWebRequest.WebRequest.Timeout = 10000;
-            try
+            HttpWebResponse response;
+            Encoding encoding = Encoding.UTF8;
+label:      try
             {
-                str_html = srHttpWebRequest.RunGetRequest();
+                response = HttpWebResponseUtility.CreateGetHttpResponse(pic_web_url, 10000, null, Cookies);
+                str_html = HttpWebResponseUtility.StrGetRequest(response, encoding);
             }
             catch (WebException ex)
             {
-                if (error_num == 10)
+                if (error_num == 5)
                 {
                     MessageBox.Show("访问超时2");
                     return false;
                 }
                 error_num++;
-                goto label;                
+                goto label;
             }
             catch (Exception ex)
             {
-                if (error_num == 10)
+                if (error_num == 5)
                 {
                     MessageBox.Show("访问发生错误");
                     return false;
@@ -232,8 +216,8 @@ label:      srHttpWebRequest.Create(pic_web_url);
             Match match = reg.Match(str_html);
             if (match.Success)
             {
-                pic_web_url.Add(f.url_text.Text);
-                pic_url.Add(match.Value);
+                pic_web_url.Insert(0, f.url_text.Text);
+                pic_url.Insert(0, match.Value);
             }
 
         }

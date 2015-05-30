@@ -199,10 +199,11 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
         public System.Windows.Forms.Label label4;
+        public System.Windows.Forms.Label label5;
 
         private System.Windows.Forms.CheckBox checkBox1;
         public System.Windows.Forms.ProgressBar progressBar1;
-        public System.Windows.Forms.Label label5;        
+                
     }
 }
 

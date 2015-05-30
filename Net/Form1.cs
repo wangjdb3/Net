@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Controls;
 using System.Net;
-using SendHttp;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -25,11 +24,11 @@ namespace Net
             button4.Enabled = false;
             checkBox1.Enabled = false;
         }
-        CookieContainer cookies = null;
+        CookieCollection Cookies = null;
         string strCookies = string.Empty;
         private void button1_Click(object sender, EventArgs e)
         {
-            deal.Web_Login(this, ref cookies, ref strCookies);
+            deal.Web_Login(this, ref Cookies, ref strCookies);
         }
         private void button2_Click(object sender, EventArgs e)
         {
@@ -39,7 +38,7 @@ namespace Net
             }
             else
             {
-                deal.Web_Get(this, cookies, strCookies);
+                deal.Web_Get(this, Cookies, strCookies);
             }
         }
 
