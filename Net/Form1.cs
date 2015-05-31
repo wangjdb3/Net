@@ -24,11 +24,10 @@ namespace Net
             button4.Enabled = false;
             checkBox1.Enabled = false;
         }
-        CookieCollection Cookies = null;
-        string strCookies = string.Empty;
+        
         private void button1_Click(object sender, EventArgs e)
         {
-            deal.Web_Login(this, ref Cookies, ref strCookies);
+            Web_Login();
         }
         private void button2_Click(object sender, EventArgs e)
         {
@@ -38,27 +37,40 @@ namespace Net
             }
             else
             {
-                deal.Web_Get(this, Cookies, strCookies);
+                Web_Get();
             }
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            deal.th();
+            Clipboard.SetDataObject(dir_Text.Text);
+            th(strCookies);
             checkBox1.Checked = true;
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
-            deal.pic_url.Clear();
-            deal.pic_web_url.Clear();
-            label4.Text = "抓取：";
-            label5.Text = "进度：";
-            url_text.Text = "";
-            button3.Enabled = false;
-            button4.Enabled = false;
-            checkBox1.Checked = false;
-            progressBar1.Value = 0;
+            pic_url.Clear();
+            pic_web_url.Clear();
+            pic_web_url_tmp.Clear();
+            this.Invoke((EventHandler)(delegate
+            {
+                label4.Text = "抓取：";
+                label5.Text = "进度：";
+                dir_Text.Text = "";
+                button3.Enabled = false;
+                button4.Enabled = false;
+                checkBox1.Checked = false;
+                progressBar1.Value = 0;
+            }));
+            if(pic_web_all_url.Count!=0)
+            {
+                Pic_Url_Deal(pic_web_all_url[0], dir[0]);
+            }
+            else
+            {
+                MessageBox.Show("完成");
+            }
         }
     }
 }

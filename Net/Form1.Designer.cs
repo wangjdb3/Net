@@ -41,6 +41,7 @@
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.label5 = new System.Windows.Forms.Label();
+            this.comboBox1 = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // url_text
@@ -99,9 +100,9 @@
             // 
             // dir_Text
             // 
-            this.dir_Text.Location = new System.Drawing.Point(82, 87);
+            this.dir_Text.Location = new System.Drawing.Point(156, 87);
             this.dir_Text.Name = "dir_Text";
-            this.dir_Text.Size = new System.Drawing.Size(338, 21);
+            this.dir_Text.Size = new System.Drawing.Size(264, 21);
             this.dir_Text.TabIndex = 6;
             // 
             // label4
@@ -130,7 +131,7 @@
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(75, 23);
             this.button4.TabIndex = 9;
-            this.button4.Text = "清空";
+            this.button4.Text = "继续";
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
@@ -160,11 +161,28 @@
             this.label5.TabIndex = 12;
             this.label5.Text = "进度：";
             // 
+            // comboBox1
+            // 
+            this.comboBox1.FormattingEnabled = true;
+            this.comboBox1.Items.AddRange(new object[] {
+            "2010",
+            "2011",
+            "2012",
+            "2013",
+            "2014",
+            "2015"});
+            this.comboBox1.Location = new System.Drawing.Point(82, 87);
+            this.comboBox1.Name = "comboBox1";
+            this.comboBox1.Size = new System.Drawing.Size(68, 20);
+            this.comboBox1.TabIndex = 13;
+            this.comboBox1.Text = "2012";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(450, 261);
+            this.Controls.Add(this.comboBox1);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.checkBox1);
@@ -203,6 +221,7 @@
 
         private System.Windows.Forms.CheckBox checkBox1;
         public System.Windows.Forms.ProgressBar progressBar1;
+        public System.Windows.Forms.ComboBox comboBox1;
                 
     }
 }

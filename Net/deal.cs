@@ -14,16 +14,24 @@ using System.Runtime.InteropServices;
 
 namespace Net
 {
-    class deal
+    public partial class Form1 : Form
     {
+        Thread[] workThreads = new Thread[3];
+        static object locker = new object();
+        static bool[] done = new bool[2];
         public static ThunderAgentLib.AgentClass a = new ThunderAgentLib.AgentClass();
-
+        public static List<string> pic_web_all_url = new List<string>();
+        public static List<string> dir = new List<string>();
+        public static List<string> pic_web_url_tmp = new List<string>();
         public static List<string> pic_web_url = new List<string>();
         public static List<string> pic_url = new List<string>();
 
-        public static string bstrPath = "";
-        public static string strCookie = "";
-        public static bool Web_Login(Form1 f, ref CookieCollection cookies, ref string strCookies)
+        public static CookieCollection Cookies = null;
+        public static string strCookies = string.Empty;
+
+        public static int url_deal_num = 0;
+
+        public bool Web_Login()
         {
             string filedir = Application.StartupPath;
             string username = string.Empty;
@@ -41,14 +49,13 @@ namespace Net
                 return false;
             }
             HttpWebResponse response;
-            CookieCollection Cookies = new CookieCollection();
+            Cookies = new CookieCollection();
             Encoding encoding = Encoding.UTF8;
             string loginUrl = "https://www.latexperiment.com/access/protect/new-rewrite?f=2&url=/subscribers/&host=www.latexperiment.com&ssl=off";
             string html_str = "";
             IDictionary<string, string> parameters = new Dictionary<string, string>();
             parameters.Add("amember_login", username);
             parameters.Add("amember_pass", passwd);
-            string cookieString = "";
             try
             {
                 response = HttpWebResponseUtility.CreatePostHttpResponse(loginUrl, parameters, 10000, null, encoding, Cookies);
@@ -56,12 +63,12 @@ namespace Net
                 Cookies = response.Cookies;
                 foreach (Cookie cookie in Cookies)
                 {
-                    cookieString += (cookie.ToString() + "; ");
+                    strCookies += (cookie.ToString() + "; ");
                 }
             }
             catch (WebException ex)
             {
-                f.label1.Text = "登陆状态:" + "登陆超时";
+                label1.Text = "登陆状态:" + "登陆超时";
                 return false;
             }
             catch (Exception ex)
@@ -74,26 +81,23 @@ namespace Net
             Match match = reg.Match(html_str);
             if (match.Success)
             {
-                f.label1.Text = "登陆状态:" + "登陆成功";
-                f.button2.Enabled = true;
+                label1.Text = "登陆状态:" + "登陆成功";
+                button2.Enabled = true;
             }
             else
             {
-                f.label1.Text = "登陆状态:" + "登陆失败";
+                label1.Text = "登陆状态:" + "登陆失败";
                 return false;
             }
-            cookies = Cookies;
-            strCookies = cookieString;
             return true;
         }
         ////////////////////////////////////////////////
-        public static bool Web_Get(Form1 f, CookieCollection Cookies, string strCookies)
+        public bool Web_Get()
         {
             string str_html = string.Empty;
             HttpWebResponse response;
             Encoding encoding = Encoding.UTF8;
-            bstrPath = f.dir_Text.Text.Trim();
-            string Url = f.url_text.Text.Trim();
+            string Url = url_text.Text.Trim();
             try
             {
                 response = HttpWebResponseUtility.CreateGetHttpResponse(Url, 10000, null, Cookies);
@@ -110,42 +114,104 @@ namespace Net
                 return false;
                 //发生其他异常时的处理操作。
             }
-            Url_Get(f,ref pic_web_url, str_html);
-            if (pic_web_url.Count != 0)
+            Web_Url_Get(str_html);
+            if (pic_web_all_url.Count != 0)
             {
-                f.Invoke((EventHandler)(delegate
+                Pic_Url_Deal(pic_web_all_url[0], dir[0]);                
+            }
+            else
+            {
+                MessageBox.Show("网页有误");
+                return false;
+            }
+            return true;
+        }
+        ///////////////////////////////////////////////
+        public bool Web_Url_Get(string str_html)
+        {
+            int index = 0;
+            Regex reg = new Regex(@"<h2 class=""title""><a href="".*"">.*</a></h2>");
+            Match match = reg.Match(str_html, index);
+            while (match.Success)
+            {
+                string Web_Url_tmp = match.Value;
+                index = (match.Index + match.Length);
+                reg = new Regex(@"https:.*(?="")");
+                match = reg.Match(Web_Url_tmp);
+                pic_web_all_url.Add(match.Value);
+                //pic_web_url.Add(match.Value);
+                reg = new Regex(@"(?<=\d"">).*(?=</a>)");
+                match = reg.Match(Web_Url_tmp);
+                string dir_tmp = @"H:\新建文件夹\LATEX\" + comboBox1.Text + @"\" + match.Value;
+                dir.Add(dir_tmp);
+                reg = new Regex(@"<h2 class=""title""><a href="".*"">.*</a></h2>");
+                match = reg.Match(str_html, index);
+            }
+            return true;
+        }
+        ///////////////////////////////////////////////
+        public bool Pic_Url_Deal(string web_url, string dir)
+        {
+            this.Invoke((EventHandler)(delegate
+            {
+                dir_Text.Text = dir;
+            }));
+            string str_html = string.Empty;
+            HttpWebResponse response;
+            Encoding encoding = Encoding.UTF8;
+            try
+            {
+                response = HttpWebResponseUtility.CreateGetHttpResponse(web_url, 10000, null, Cookies);
+                str_html = HttpWebResponseUtility.StrGetRequest(response, encoding);
+            }
+            catch (WebException ex)
+            {
+                MessageBox.Show("访问超时1");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("访问发生错误");
+                return false;
+                //发生其他异常时的处理操作。
+            }
+            Url_Get(str_html);
+            if (pic_web_url_tmp.Count != 0)
+            {
+                this.Invoke((EventHandler)(delegate
                 {
-                    f.progressBar1.Maximum = pic_web_url.Count - 1;
+                    progressBar1.Minimum = 0;
+                    progressBar1.Maximum = pic_web_url_tmp.Count;// -1;
                 }));
-                for (int i = 0; i < pic_web_url.Count; i++)
+                done[0] = false;
+                done[1] = false;
+                workThreads[0] = new Thread(new ParameterizedThreadStart(Get));
+                workThreads[1] = new Thread(new ParameterizedThreadStart(Get));
+                workThreads[2] = new Thread(new ParameterizedThreadStart(Wait));
+                workThreads[0].Start(0);
+                workThreads[1].Start(1);
+                workThreads[2].Start(str_html);
+//                t.Join(1000);
+/*                for (int i = 0; i < pic_web_url.Count; i++)
                 {
-                    bool b = Pic_Url_Get(pic_web_url[i], Cookies, strCookies, ref pic_url);////////////////////////
+                    bool b = Pic_Url_Get(pic_web_url[i]);////////////////////////
                     if (b == false)
                     {
-                        f.progressBar1.Value = 0;
-                        f.label5.Text = "进度：";
+                        progressBar1.Value = 0;
+                        label5.Text = "进度：";
                         pic_url.Clear();
                         pic_web_url.Clear();
                         return false;
                     }
-                    f.Invoke((EventHandler)(delegate
+                    this.Invoke((EventHandler)(delegate
                     {
-                        f.progressBar1.Value = i;
-                        f.label5.Text = "进度：" + (i + 1).ToString() + "/" + pic_web_url.Count;
+                        progressBar1.Value = i;
                     }));
-                }
-                mp4_url_Get(f, ref pic_web_url, str_html, ref pic_url);
-                if (pic_url.Count == pic_web_url.Count)
-                {
-                    f.label4.Text = f.label4.Text + "完成";
-                    f.button3.Enabled = true;
-                    f.button4.Enabled = true;
-                }
-                else
-                {
-                    MessageBox.Show("数据不匹配");
-                    return false;
-                }
+                    this.Invoke((EventHandler)(delegate
+                    {
+                        label5.Text = "进度：" + (i + 1).ToString() + "/" + pic_web_url.Count;
+                    }));
+                }*/
             }
             else
             {
@@ -154,23 +220,23 @@ namespace Net
             }
             return true;
         }
-        ///////////////////////////////////////////////
-        public static bool Url_Get(Form1 f,ref List<string> pic_web_url, string str_html)
+        /// ///////////////////////////////////////////////
+        public bool Url_Get(string str_html)
         {
             int index = 0;
             Regex reg = new Regex(@"https://www\.latexperiment\.com/subscribers/\?attachment_id=\d+");
             Match match = reg.Match(str_html, index);
             while (match.Success)
             {
-                pic_web_url.Add(match.Value);
+                pic_web_url_tmp.Add(match.Value);
                 index = (match.Index + match.Length);
                 reg = new Regex(@"https://www\.latexperiment\.com/subscribers/\?attachment_id=\d+");
                 match = reg.Match(str_html, index);
             }
             return true;
         }
-        ///////////////////////////////////////////////////        
-        public static bool Pic_Url_Get(string pic_web_url, CookieCollection Cookies, string strCookies, ref List<string> pic_url)
+        ///////////////////////////////////////////////////      
+        public bool Pic_Url_Get(string pic_web_url_tmp)
         {
             string str_html = string.Empty;
             int error_num = 0;
@@ -178,7 +244,7 @@ namespace Net
             Encoding encoding = Encoding.UTF8;
 label:      try
             {
-                response = HttpWebResponseUtility.CreateGetHttpResponse(pic_web_url, 10000, null, Cookies);
+                response = HttpWebResponseUtility.CreateGetHttpResponse(pic_web_url_tmp, 10000, null, Cookies);
                 str_html = HttpWebResponseUtility.StrGetRequest(response, encoding);
             }
             catch (WebException ex)
@@ -206,22 +272,27 @@ label:      try
             Match match = reg.Match(str_html);
             if (match.Success)
             {
-                pic_url.Add(match.Value);
+                lock (locker)
+                {
+                    pic_url.Add(match.Value);
+                    pic_web_url.Add(pic_web_url_tmp);
+                    url_deal_num++;
+                }
             }
             return true;
         }
-        public static void mp4_url_Get(Form1 f, ref List<string> pic_web_url, string str_html, ref List<string> pic_url)
+        public void mp4_url_Get(string str_html)
         {
             Regex reg = new Regex(@"(?<=a href="")https?:.*\.mp4(?="")");
             Match match = reg.Match(str_html);
             if (match.Success)
             {
-                pic_web_url.Insert(0, f.url_text.Text);
+                pic_web_url.Insert(0, url_text.Text);
                 pic_url.Insert(0, match.Value);
             }
 
         }
-        public static void th()
+        public void th(string strCookie)
         {
             string bstrurl = string.Empty;
             string bstrFileName = "";
@@ -234,11 +305,12 @@ label:      try
             {
                 bstrurl = pic_url[i];
                 bstrReferUrl = pic_web_url[i];
-                a.AddTask2(bstrurl, bstrFileName, bstrPath, bstrComments, bstrReferUrl, nStartMode, nOnlyFromOrigin, nOriginThreadCount, strCookie);
+                a.AddTask2(bstrurl, bstrFileName, "", bstrComments, bstrReferUrl, nStartMode, nOnlyFromOrigin, nOriginThreadCount, strCookie);
             }
             a.CommitTasks();
             MessageBox.Show("抓取完成");
         }
+        
     }
     
 }
